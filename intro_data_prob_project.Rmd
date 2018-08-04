@@ -1,0 +1,246 @@
+---
+title: "Exploring the BRFSS data"
+author: "Matthew Cassi"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+ggplot2 is the package that is used for producing plots and dplyr is used to filter, search, and manipulate dataframes. Both of these packages are loaded below.
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+```
+
+### Load data
+
+The Behavioral Risk Factor Surveillance System (BRFSS) data from 2013 is loaded below.
+ 
+```{r load-data}
+load("C:/Users/mcassi/Documents/Client_Files_DONOTBACKUP/brfss2013.RData")
+```
+
+* * *
+
+## Part 1: Data
+
+BRFSS is a collaboration between the US government (Center for Disease Control) and the 50 states, plus the District of Columbia, Guam, and Puerto Rico. They collect data on non-institutionalized adults (18+) "preventive health practices and risk behaviors that are linked to chronic diseases, injuries, and preventable infectious diseases that affect the adult population." (Source)[https://www.coursera.org/learn/probability-intro/supplement/1E7zQ/project-information] They look at information about alcohol use, tobacco use, HIV, immunizations, sleep patterns, and seat belt use in cars. Data are collected throughout the year. (Source)[https://www.cdc.gov/brfss/about/about_brfss.htm]. 
+
+According to the (BRFSS User Guide)[https://www.cdc.gov/brfss/data_documentation/pdf/UserguideJune2013.pdf], there are standard core questions that must be asked, rotating core questions that are asked every other year, optional questions that could be asked by the states, and state added questions based on their health priorities. Questions are collected by telephone, either by landline or mobile phone from people that reside in a private residence or college dormatory. There is a chance that a potential respondent may not answer the phone and potential respondents can be called up 15 times to get the necessary data.
+
+States are allowed to collect data according to their own geographic regions, whether it's by county, public health district, or other geographic region in the state. The CDC wants to have 4,000 responses collected per state. The sampling process for landlines and mobile phones is different. For landline respondents, household sampling is done where the number of adults is gathered and then a random adult is selected from the household. Disproportionate stratified sampling is used where phone numbers are selected from the CDC according to the presumed density of phone numbers (two densities are large and medium). Large density phone numbers are sampled at a higher rate than the medium density phone numbers. For mobile phones, potential respondents are treated are single adult households. These numbers are collected from the CDC and selected by randomly sampling from different area code and prefix combinations. Each potential cell phone respondent has an equal probability of being selected. For both mobile phones and landlines, there is stratified sampling associated to geographic regions that each state sets up. (Source)[https://www.cdc.gov/brfss/data_documentation/pdf/UserguideJune2013.pdf]
+
+The study is not an experiment in that the respondents are not randomly assigned to study groups. Instead this is an observational study. Because of this, we can only establish correlations between features and not causation. The study is considered generalizable because the phone numbers are randomly sampled. However, there might be some issues with generalizations as each state has a different geographic regions.
+
+In addition to this, there is also non-responsive bias in the study as some people that are called up might not answer questions, understand the questions, or even answer the phone. Because of this, you might not have a representative population.
+
+* * *
+
+## Part 2: Research questions
+
+**Research quesion 1:**
+Respondents are asked how much sleep they get and how many poor mental health days they've had. 
+
+Question: Do respondents that sleep more have lower numbers of poor mental health days than respondents that sleep less and does it differ between males and females?
+
+I am interested in this question because in my life, people that do not sleep seem to have worse days than people that sleep more. It happens to me when I do not get the recommended hours of sleep per night (7-8 hours).s
+
+**Research quesion 2:**
+Respondents are asked how many poor physical health days they've had and how many alcoholic drinks they've consumed per day over the last 30 days.
+
+Question: Does drinking more drinks per day show more poor physical health days?
+
+The interest in the question comes from seeing many people my age drink a lot of alcohol and then feeling miserable the day of/after. It would be interesting to see this trend in the data to confirm that when you drink more alcohol, your physical health diminshes.
+
+**Research quesion 3:**
+Respondents are asked how many fruits and vegetables they eat as well as how often they exercise. BRFSS calculates a variable that categorizes physical activity.
+
+Question: Do respondents that are do more physical activity eat more healthy (fruits and vegetables) compared those that are not as active?
+
+I'm interested in this question because I know runners that run a lot but eat really poorly. They claim that they can eat poorly because they run as much as they do. I want to see what the data in this study show.
+
+* * *
+
+## Part 3: Exploratory data analysis
+
+
+**Research quesion 1:**
+Do respondents that sleep more have lower numbers of poor mental health days than respondents that sleep less?
+
+The first step in the process of answering this question is to select the different columns needed in the dataset (sex, mental health days, and sleep time) and then removing the NAs in each of the columns. Then the data is summarised based on the mean, median, standard deviation, minimum, and maximum. 
+
+```{r}
+sleep_mental <- brfss2013 %>% select(sleptim1,menthlth) %>% filter((!is.na(sleptim1)) & (!is.na(menthlth)))
+names(sleep_mental) <- list('sleep','mental')
+sleep_stats <- sleep_mental %>% summarise(mean=mean(sleep), median=median(sleep), sd=sd(sleep), 
+                                          max=max(sleep), min=min(sleep))
+mental_stats <- sleep_mental %>% summarise(mean=mean(mental), median=median(mental),
+                                          sd=sd(mental), max=max(mental),min=min(mental))
+sleep_mental_stats <- bind_rows(sleep_stats, mental_stats)
+row.names(sleep_mental_stats) <- c("sleep time per night", "bad mental health days")
+sleep_mental_stats
+```
+Based on the table above, you can see that the sleep time could be normal as the mean and median are almost equal. The mental health days are right skewed as the mean is greater than the median. There also seem to be many outliers as you can't have 5000 bad mental health days in 30 days and you cannot have 450 hours of sleep in a night. We will have to deal with these values before proceeding.
+
+```{r}
+sleep_mental2 <- sleep_mental %>% filter(mental <= 30, sleep <= 24)
+sleep_stats2 <- sleep_mental2 %>% summarise(mean=mean(sleep), median=median(sleep), sd=sd(sleep), 
+                                          max=max(sleep), min=min(sleep))
+mental_stats2 <- sleep_mental2 %>% summarise(mean=mean(mental), median=median(mental),
+                                           sd=sd(mental), 
+                                           max=max(mental),min=min(mental))
+sleep_mental_stats2 <- bind_rows(sleep_stats2, mental_stats2)
+row.names(sleep_mental_stats2) <- c("sleep time per night", "bad mental health days")
+sleep_mental_stats2
+
+```
+Now the dataset has valid values for each and the outcome is still the same. The mental health days are right skewed and the sleep time could be normal.
+
+The next thing to do is to look at the distributions of mental health days and sleep time using boxplots.
+
+```{r}
+sleep <- ggplot(sleep_mental2, aes(x="sleep time per night", y=sleep)) + 
+  geom_boxplot(fill='light blue', color='blue') + ggtitle("Sleep Time Per Night") +
+  theme(plot.title = element_text(hjust = 0.5), axis.text.x=element_blank(),axis.ticks.x=element_blank()) + 
+  ylab("Sleep Time") + theme_classic() 
+  
+mental <- ggplot(sleep_mental2, aes(x="poor mental health days", y=mental)) + 
+  geom_boxplot(fill='light blue', color='blue') + ggtitle("Box Plot of Poor Mental Health Days") +
+  theme(plot.title = element_text(hjust = 0.5), axis.text.x=element_blank(),axis.ticks.x=element_blank()) + 
+  ylab("Poor Mental Health Days") + theme_classic() 
+
+grid.arrange(sleep, mental, ncol=2)
+```
+
+The plots above confirm that the mental health days are right skewed and the sleep time is almost normal. The next plot shows the boxplot of sleep hours on the y-axis and poor mental health days on the x-axis. 
+
+The code below cuts each feature into custom intervals. This is done to make them categorical variables, so that we can do some counts.
+
+```{r}
+sleep_mental2$sleep_factor <- cut(sleep_mental2$sleep, breaks = c(0,3,6,9,12,24), include.lowest = T, labels = c("low","medium","recommended","more","most"))
+
+sleep_mental2$mental_factor <- cut(sleep_mental2$mental, breaks = c(0,3,9,15,21,27,30), include.lowest = T, labels=c("low","low_med","medium","med_high","high","highest"))
+
+table(sleep_mental2$sleep_factor, sleep_mental2$mental_factor)
+```
+
+The table above shows the counts of each factor. You can see that most of the values for all values of poor mental health days, most of the sleep values are medium or recommended. This might show that there two features are not correlated with each other.
+
+```{r}
+ggplot(sleep_mental2, aes(x=mental, y=sleep)) + 
+  geom_boxplot(fill='light blue', color='blue', aes(group = cut_width(mental, 0.1))) +
+  ggtitle("Box Plot of Sleep Time by Poor Mental Health Days") +
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  ylab("Sleep Time") + theme_classic()
+```
+
+Conclusion: When looking at the different boxplots split out by the number of poor mental health days, there doesn't really seem to be a difference in the hours of sleep and poor mental health days. If there was a correlation, you would see a trend in the boxplots, like as poor mental health days increases, the hours of sleep decreases significantly. 
+
+**Research quesion 2:**
+Does drinking more drinks per day show more poor physical health days?
+
+The first step in answering this question is to select the two features (drinks in last 30 days and number of bad physical health days) and then filtering out the NAs from the data. After that the summary stats (mean, median, standard deviation, min, and max) of each feature is computed.
+```{r}
+drinking <- brfss2013 %>% select(avedrnk2, physhlth) %>% filter((!is.na(avedrnk2)) & (!is.na(physhlth)))
+names(drinking) <- list('drinks','physical')
+drink_stats <- drinking %>% summarise(mean=mean(drinks), median=median(drinks), sd=sd(drinks), 
+                                      max=max(drinks), min=min(drinks))
+physical_stats <- drinking %>% summarise(mean=mean(physical), median=median(physical),
+                                         sd=sd(physical), max=max(physical),min=min(physical))
+drinking_stats <- bind_rows(drink_stats, physical_stats)
+row.names(drinking_stats) <- c("number of drinks", "bad physical health days")
+drinking_stats
+```
+The output above shows that both the distributions are right skewed because the means are greater than the medians. As expected, the standard deviation of poor physical health days is large (compared to the mean) and the standard deviation for the number of drinks is much smaller. There don't seem to be any major outliers like the previous data for sleep and mental health.
+
+```{r}
+drinks <- ggplot(drinking, aes(drinks)) + geom_histogram(fill="light blue", color="blue") + ggtitle("Histogram of Drinks in \n Last 30 Days") + theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5)) + xlab("Number of Drinks")
+
+physical <- ggplot(drinking, aes(physical)) + geom_histogram(fill="light blue", color="blue") + 
+  ggtitle("Histogram of Poor Physical \n Health Days in Last 30 Days") + theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5)) + xlab("Number of Poor Physical Health Days")
+
+grid.arrange(drinks, physical, ncol=2)
+```
+The plots above show the histograms of the number of drinks in the last 30 days and the number of poor mental health days in the last 30 days. Both distributions are right skewed, like the descriptive stats in the table above. There is a small spike at 30 poor mental health days. 
+
+```{r}
+drinking$drink_factor <- cut(drinking$drinks, c(0,5,15,25,35,45,76), include.lowest = T)
+ggplot(drinking, aes(physical, fill=drink_factor, color=drink_factor)) + 
+  geom_density(alpha=0.25, adjust=5) +
+  ggtitle("Density Plots of Poor Physical Health Days \n Factored by Drinks Had") +
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  xlab("Poor Physical Health Days") + theme_classic()
+```
+When looking at the density plots (smoothed out histograms) factored by the number of drinks had, there aren't major differences between the different drink categories. Each density plot is right skewed just like the overall data. 
+
+```{r}
+cor(drinking$drinks, drinking$physical)
+```
+The last thing to do is check the correlation between the two features. The correlation is 0.01 which means these features are not correlated at all.
+
+Conclusion: Drinking more alcohol does not lead to more poor physical health days according to the data. This is shown in the density plots and the print out of the correlation between the two features.
+
+**Research quesion 3:**
+Do respondents that are do more physical activity eat more healthy (fruits and vegetables) compared those that are not as active?
+
+The first step in the process of answering this question is to select the correct features from the dataset and filter out the NAs. In addition to that, the data was filtered according to calculated features that say if the fruits and vegetables eaten are within the accepted range of values.
+
+After filtering out this data, the table below was created to show some descriptive stats on the fruits and vegetables eaten as well as the combined number of fruits and vegetables.
+```{r}
+healthy <- brfss2013 %>% select(X_frutsum, X_vegesum, X_pacat1, X_veg23, X_frt16) %>% 
+  filter((!is.na(X_frutsum)) & (!is.na(X_vegesum)) & (!is.na(X_pacat1)) & 
+           X_veg23 == "Included - values are in accepted range" & X_frt16 == "Included - values are in accepted range")
+healthy$combined <- healthy$X_frutsum + healthy$X_vegesum
+fruit <- healthy %>% summarise(mean=mean(X_frutsum),median=median(X_frutsum),sd=sd(X_frutsum), 
+                               max=max(X_frutsum), min=min(X_frutsum))
+veggie <- healthy %>% summarise(mean=mean(X_vegesum),median=median(X_vegesum),sd=sd(X_vegesum), 
+                                max=max(X_vegesum), min=min(X_vegesum))
+combined <- healthy %>% summarise(mean=mean(combined),median=median(combined),sd=sd(combined), 
+                                max=max(combined), min=min(combined))
+healthy_stats <- bind_rows(fruit, veggie, combined)
+row.names(healthy_stats) <- c("fruits eaten", "veggies eaten", "combined")
+healthy_stats
+```
+The stats above show that each feature is skewed to the right, which means that the mean of the data are greater than the median.
+
+The breakdown of activity categories is shown below. Most people are either highly active or inactive with insufficiently active having more responses than active.
+```{r}
+ggplot(healthy, aes(X_pacat1)) + geom_bar(color="blue", fill="light blue") + theme_classic() + 
+  ggtitle("Bar Plot of Activity Categories") + theme(plot.title = element_text(hjust = 0.5)) + xlab("Activity Categories")
+  
+```
+
+The next thing to do is to check the summary stats of the combined total of fruits and vegetables eaten grouped by the activity categories. The table below shows that there is a change in the mean and median (decreasing change) when there is less physical activity. Plots will be used to confirm this.
+```{r}
+healthy %>% group_by(X_pacat1) %>% summarise(mean=mean(combined), median=median(combined), sd=sd(combined),
+                                             min=min(combined), max=max(combined))
+```
+
+The first plot below shows the density plots (smoothed histograms) of the combined fruits and vegetables eaten based on the different activity categories. The density plots show that there are differences in density plots when factoring on the different activity categories. The densities are still considered right skewed for each activity category.
+```{r}
+ggplot(healthy, aes(combined, fill=X_pacat1, color=X_pacat1)) + 
+  geom_density(alpha=0.2, adjust=5) +
+  ggtitle("Density Plots of Fruits/Veggies Consumed \n Factored by Activity Category") +
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  xlab("Fruits and Veggies Eaten") + theme_classic()
+```
+
+The boxplots below show the number of fruits and vegetables eaten by activity category. This entire plot shows that there is a decrease in the amount of fruits and vegetables eaten as you go from highly active to inactive, though this decrease is not as stark.
+```{r}
+ggplot(healthy, aes(x=X_pacat1, y=combined)) + geom_boxplot(color="blue", fill="light blue") +
+  ggtitle("Boxplots of Fruits/Veggies Eaten \n Factored by Activity Category") +
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  xlab("Activity Category") + ylab("Fruits and Veggies Eaten") + theme_classic()
+```
+
+Conclusion: Based on the initial exploratory analysis above, there is a slight negative correlation of fruits and vegetables eaten based on the different activity categories (highly active, active, insufficiently active, inactive). When you increase your activity, the number of fruits and vegetables eaten increases.
