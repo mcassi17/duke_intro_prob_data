@@ -19,4 +19,4 @@ The BRFSS objective is to collect uniform, state-specific data on preventive hea
 
 Health characteristics estimated from the BRFSS pertain to the non-institutionalized adult population, aged 18 years or older, who reside in the US. In 2013, additional question sets were included as optional modules to provide a measure for several childhood health and wellness indicators, including asthma prevalence for people aged 17 years or younger.
 
-(Source)[https://www.coursera.org/learn/probability-intro/supplement/1E7zQ/project-information]
+[Source](https://www.coursera.org/learn/probability-intro/supplement/1E7zQ/project-information)
