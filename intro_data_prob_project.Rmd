@@ -12,7 +12,7 @@ output:
 
 ### Load packages
 
-ggplot2 is the package that is used for producing plots and dplyr is used to filter, search, and manipulate dataframes. Both of these packages are loaded below.
+ggplot2 is the package that is used for producing plots and dplyr is used to filter, search, and manipulate dataframes. Both of these packages are loaded below. gridExtra is a package that allows for grouping ggplot2 plots together.
 
 ```{r load-packages, message = FALSE}
 library(ggplot2)
@@ -143,6 +143,8 @@ ggplot(sleep_mental2, aes(x=mental, y=sleep)) +
 ```
 
 Conclusion: When looking at the different boxplots split out by the number of poor mental health days, there doesn't really seem to be a difference in the hours of sleep and poor mental health days. If there was a correlation, you would see a trend in the boxplots, like as poor mental health days increases, the hours of sleep decreases significantly. 
+
+There is not a correlation between sleep time and poor mental health days.
 
 **Research quesion 2:**
 Does drinking more drinks per day show more poor physical health days?
